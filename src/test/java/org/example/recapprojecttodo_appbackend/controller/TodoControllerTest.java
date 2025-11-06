@@ -88,6 +88,15 @@ class TodoControllerTest {
     }
 
     @Test
+    void getTodoById_shouldReturnTrue_whenNotFound()
+            throws Exception {
+
+
+        mockMvc.perform(get("/api/todo/1"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void modifyTodo_shouldReturnTrue_whenModifyTodoById()
             throws Exception {
         Todo newTodo = new Todo("1", "test", Status.OPEN);
@@ -103,6 +112,23 @@ class TodoControllerTest {
         mockMvc.perform(put("/api/todo/1").contentType(MediaType.APPLICATION_JSON).content(expected))
                 .andExpect(status().isOk())
                 .andExpect(content().json(expected));
+
+    }
+
+    @Test
+    void modifyTodo_shouldReturnTrue_whenTodoNotFound()
+            throws Exception {
+
+        String requestBody = """
+                    {
+                        "description": "modified test",
+                        "status": "DONE"
+                    }
+                """;
+
+
+        mockMvc.perform(put("/api/todo/1").contentType(MediaType.APPLICATION_JSON).content(requestBody))
+                .andExpect(status().isNotFound());
 
     }
 

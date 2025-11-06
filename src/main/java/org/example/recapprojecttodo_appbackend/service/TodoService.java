@@ -1,6 +1,7 @@
 package org.example.recapprojecttodo_appbackend.service;
 
 import org.example.recapprojecttodo_appbackend.dto.TodoDTO;
+import org.example.recapprojecttodo_appbackend.exceptions.TodoNotFoundException;
 import org.example.recapprojecttodo_appbackend.models.Todo;
 import org.example.recapprojecttodo_appbackend.repository.TodoRepo;
 import org.example.recapprojecttodo_appbackend.utils.IdService;
@@ -38,15 +39,15 @@ public class TodoService {
 
         setLastAction("createTodo", createdTodo);
 
-        return todoRepo.findById(newId).orElseThrow();
+        return findById(newId);
     }
 
-    public Todo findById(String id) {
-        return todoRepo.findById(id).orElseThrow();
+    public Todo findById(String id) throws TodoNotFoundException {
+        return todoRepo.findById(id).orElseThrow(() -> new TodoNotFoundException(id));
     }
 
     public Todo updateTodo(String id, TodoDTO todoDTO) {
-        Todo outdatedTodoDto = todoRepo.findById(id).orElseThrow();
+        Todo outdatedTodoDto = findById(id);
 
         Todo updatedTodo = outdatedTodoDto.withDescription(todoDTO.description()).withStatus(todoDTO.status());
 
@@ -54,11 +55,11 @@ public class TodoService {
 
         setLastAction("updateTodo", outdatedTodoDto);
 
-        return todoRepo.findById(id).orElseThrow();
+        return findById(id);
     }
 
     public Todo deleteTodoById(String id) {
-        Todo deletedTodo = todoRepo.findById(id).orElseThrow();
+        Todo deletedTodo = findById(id);
         todoRepo.deleteById(id);
 
         setLastAction("deleteTodo", deletedTodo);
@@ -68,7 +69,7 @@ public class TodoService {
 
     public Todo undoAction() {
         if (lastAction == null) {
-            System.out.println("invalid action");
+            System.err.println("Undo: invalid action");
             return null;
         }
 

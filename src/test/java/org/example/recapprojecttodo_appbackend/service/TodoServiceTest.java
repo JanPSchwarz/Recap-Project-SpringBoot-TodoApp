@@ -1,6 +1,7 @@
 package org.example.recapprojecttodo_appbackend.service;
 
 import org.example.recapprojecttodo_appbackend.dto.TodoDTO;
+import org.example.recapprojecttodo_appbackend.exceptions.TodoNotFoundException;
 import org.example.recapprojecttodo_appbackend.models.Todo;
 import org.example.recapprojecttodo_appbackend.repository.TodoRepo;
 import org.example.recapprojecttodo_appbackend.utils.IdService;
@@ -14,8 +15,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class TodoServiceTest {
 
@@ -84,7 +84,7 @@ class TodoServiceTest {
     void findById_shouldReturnTrue_whenTodoNotFound() {
         String notExistingId = "2";
 
-        assertThrows(Exception.class, () -> todoService.findById(notExistingId));
+        assertThrows(TodoNotFoundException.class, () -> todoService.findById(notExistingId));
         verify(mockTodoRepo).findById(notExistingId);
     }
 
@@ -107,7 +107,7 @@ class TodoServiceTest {
         String notExistingId = "2";
         TodoDTO inputTodoDTO = new TodoDTO("test", Status.OPEN);
 
-        assertThrows(Exception.class, () -> todoService.updateTodo(notExistingId, inputTodoDTO));
+        assertThrows(TodoNotFoundException.class, () -> todoService.updateTodo(notExistingId, inputTodoDTO));
     }
 
     @Test
@@ -117,6 +117,7 @@ class TodoServiceTest {
         mockTodoRepo.save(expectedDeletedTodo);
 
         when(mockTodoRepo.findById(idToDelete)).thenReturn(Optional.of(expectedDeletedTodo));
+        doNothing().when(mockTodoRepo).deleteById("1");
 
         Todo actualDeletedTodo = todoService.deleteTodoById(idToDelete);
 
@@ -133,6 +134,7 @@ class TodoServiceTest {
         when(mockIdService.generateId()).thenReturn("1");
         when(mockTodoRepo.save(todo)).thenReturn(todo);
         when(mockTodoRepo.findById("1")).thenReturn(Optional.of(todo));
+        doNothing().when(mockTodoRepo).deleteById("1");
 
         Todo createdTodo = todoService.createTodo(todoDto);
         Todo reversedTodo = todoService.undoAction();
@@ -146,6 +148,7 @@ class TodoServiceTest {
         Todo todo = new Todo("1", "This is a new test", Status.OPEN);
 
         when(mockTodoRepo.findById("1")).thenReturn(Optional.of(todo));
+        doNothing().when(mockTodoRepo).deleteById("1");
 
         Todo deletedTodo = todoService.deleteTodoById("1");
         Todo reversedTodo = todoService.undoAction();
