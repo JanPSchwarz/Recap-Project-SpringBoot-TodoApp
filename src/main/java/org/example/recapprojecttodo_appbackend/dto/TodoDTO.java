@@ -6,5 +6,9 @@ import org.example.recapprojecttodo_appbackend.utils.Status;
 
 @Builder
 @With
-public record TodoDTO(String description, Status status) {
+public record TodoDTO(String description, Status status, String id) {
+
+    public TodoDTO(String description, Status status) {
+        this(description, status, "");
+    }
 }

@@ -124,4 +124,34 @@ class TodoServiceTest {
         verify(mockTodoRepo).findById(idToDelete);
         verify(mockTodoRepo).deleteById(idToDelete);
     }
+
+    @Test
+    void undoAction_shouldReturnTrue_whenLastCreationWasRemoved() {
+        TodoDTO todoDto = new TodoDTO("This is a new test", Status.OPEN);
+        Todo todo = new Todo("1", "This is a new test", Status.OPEN);
+
+        when(mockIdService.generateId()).thenReturn("1");
+        when(mockTodoRepo.save(todo)).thenReturn(todo);
+        when(mockTodoRepo.findById("1")).thenReturn(Optional.of(todo));
+
+        Todo createdTodo = todoService.createTodo(todoDto);
+        Todo reversedTodo = todoService.undoAction();
+
+        assertEquals(createdTodo, reversedTodo);
+        verify(mockTodoRepo).deleteById("1");
+    }
+
+    @Test
+    void undoAction_shouldReturnTrue_whenLastDeletionWasRemoved() {
+        Todo todo = new Todo("1", "This is a new test", Status.OPEN);
+
+        when(mockTodoRepo.findById("1")).thenReturn(Optional.of(todo));
+
+        Todo deletedTodo = todoService.deleteTodoById("1");
+        Todo reversedTodo = todoService.undoAction();
+
+        assertEquals(deletedTodo, reversedTodo);
+        verify(mockTodoRepo).deleteById("1");
+        verify(mockTodoRepo).save(todo);
+    }
 }

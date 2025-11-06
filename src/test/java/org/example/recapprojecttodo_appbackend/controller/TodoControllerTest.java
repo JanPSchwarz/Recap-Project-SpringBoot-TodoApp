@@ -60,7 +60,7 @@ class TodoControllerTest {
                 """;
 
         mockMvc.perform(post("/api/todo").contentType(MediaType.APPLICATION_JSON).content(expected))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(content().json(expected))
                 .andExpect(jsonPath("$.id").isNotEmpty());
 

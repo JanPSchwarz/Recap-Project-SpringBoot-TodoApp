@@ -3,6 +3,7 @@ package org.example.recapprojecttodo_appbackend.controller;
 import org.example.recapprojecttodo_appbackend.dto.TodoDTO;
 import org.example.recapprojecttodo_appbackend.models.Todo;
 import org.example.recapprojecttodo_appbackend.service.TodoService;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,7 +28,13 @@ public class TodoController {
         return todoService.findById(id);
     }
 
+    @GetMapping("/undo")
+    public Todo undoTodos() {
+        return todoService.undoAction();
+    }
+
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public Todo createTodo(@RequestBody TodoDTO todoDTO) {
         return todoService.createTodo(todoDTO);
     }
