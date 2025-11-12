@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -144,7 +145,7 @@ class TodoControllerTest {
     class createExampleTodosTests {
 
         @Test
-        @DisplayName("hould return true when todos created")
+        @DisplayName("should return true when todos created")
         void createExampleTodos() throws Exception {
             String expectedJson = """
                     [
@@ -167,9 +168,19 @@ class TodoControllerTest {
                     ]
                     """;
 
+            mockServer.expect(ExpectedCount.manyTimes(), requestTo("https://api.openai.com/v1/responses"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(request -> {
+                        String body = request.getBody().toString();
+                        return withSuccess("{\"received\":\"" + body + "\"}", MediaType.APPLICATION_JSON).createResponse(request);
+                    });
+
+
             mockMvc.perform(post("/api/todo/createExampleTodos"))
                     .andExpect(status().isCreated())
                     .andExpect(content().json(expectedJson));
+
+            mockServer.verify();
         }
     }
 
