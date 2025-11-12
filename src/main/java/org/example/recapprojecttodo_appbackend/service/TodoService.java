@@ -1,7 +1,9 @@
 package org.example.recapprojecttodo_appbackend.service;
 
-import org.example.recapprojecttodo_appbackend.dto.TodoDTO;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.example.recapprojecttodo_appbackend.exceptions.TodoNotFoundException;
+import org.example.recapprojecttodo_appbackend.exceptions.UndoNotPossibleException;
 import org.example.recapprojecttodo_appbackend.models.Todo;
 import org.example.recapprojecttodo_appbackend.repository.TodoRepo;
 import org.example.recapprojecttodo_appbackend.utils.IdService;
@@ -13,28 +15,39 @@ import java.util.List;
 public class TodoService {
     private final TodoRepo todoRepo;
     private final IdService idService;
+    private final OpenAiService openAiService;
 
     private String lastAction;
     private Todo lastUsedTodo;
 
-    public TodoService(TodoRepo todoRepo, IdService idService) {
+    public TodoService(TodoRepo todoRepo, IdService idService, OpenAiService openAiService) {
         this.todoRepo = todoRepo;
         this.idService = idService;
+        this.openAiService = openAiService;
     }
 
-    void setLastAction(String action, Todo todo) {
+    boolean setLastAction(@NotBlank String action, @NotNull Todo todo) {
+        if (action.isEmpty() || todo == null) {
+            throw new IllegalArgumentException("Invalid arguments: ");
+        }
+
         lastAction = action;
         lastUsedTodo = todo;
+
+        return true;
     }
 
     public List<Todo> findAll() {
         return todoRepo.findAll();
     }
 
-    public Todo createTodo(TodoDTO todoDTO) {
+    public Todo createTodo(Todo todo) {
         String newId = idService.generateId();
-        Todo createdTodo = Todo.builder().description(todoDTO.description()).status(todoDTO.status()).id(newId).build();
 
+        String grammarCheckedDescription = openAiService.checkGrammar(todo.description());
+
+        Todo createdTodo = Todo.builder().description(grammarCheckedDescription).status(todo.status()).id(newId).build();
+        
         todoRepo.save(createdTodo);
 
         setLastAction("createTodo", createdTodo);
@@ -46,14 +59,14 @@ public class TodoService {
         return todoRepo.findById(id).orElseThrow(() -> new TodoNotFoundException(id));
     }
 
-    public Todo updateTodo(String id, TodoDTO todoDTO) {
-        Todo outdatedTodoDto = findById(id);
+    public Todo updateTodo(String id, Todo todo) {
+        Todo outdatedTodo = findById(id);
 
-        Todo updatedTodo = outdatedTodoDto.withDescription(todoDTO.description()).withStatus(todoDTO.status());
+        Todo updatedTodo = outdatedTodo.withDescription(todo.description()).withStatus(todo.status());
 
         todoRepo.save(updatedTodo);
 
-        setLastAction("updateTodo", outdatedTodoDto);
+        setLastAction("updateTodo", outdatedTodo);
 
         return findById(id);
     }
@@ -67,10 +80,9 @@ public class TodoService {
         return deletedTodo;
     }
 
-    public Todo undoAction() {
+    public Todo undoRedoAction() {
         if (lastAction == null) {
-            System.err.println("Undo: invalid action");
-            return null;
+            throw new UndoNotPossibleException("Undo not possible");
         }
 
         switch (lastAction) {
@@ -78,8 +90,8 @@ public class TodoService {
                 deleteTodoById(lastUsedTodo.id());
             }
             case "updateTodo" -> {
-                TodoDTO todoDTO = new TodoDTO(lastUsedTodo.description(), lastUsedTodo.status());
-                updateTodo(lastUsedTodo.id(), todoDTO);
+                Todo todo = new Todo(lastUsedTodo.description(), lastUsedTodo.status());
+                updateTodo(lastUsedTodo.id(), todo);
             }
             case "deleteTodo" -> {
                 // SKIPPING CREATE METHOD TO KEEP ID OF CURRENT
@@ -88,9 +100,14 @@ public class TodoService {
                 setLastAction("createTodo", lastUsedTodo);
             }
 
-            default -> System.out.println("Invalid action");
+            default -> throw new UndoNotPossibleException("Undo not possible");
         }
 
         return lastUsedTodo;
+    }
+
+    public boolean deleteAll() {
+        todoRepo.deleteAll();
+        return true;
     }
 }

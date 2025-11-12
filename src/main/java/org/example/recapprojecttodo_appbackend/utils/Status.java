@@ -1,9 +1,9 @@
 package org.example.recapprojecttodo_appbackend.utils;
 
 public enum Status {
-    OPEN("open"),
-    IN_PROGRESS("inProgress"),
-    DONE("done");
+    OPEN("OPEN"),
+    IN_PROGRESS("IN_PROGRESS"),
+    DONE("DONE");
 
     private final String value;
 
